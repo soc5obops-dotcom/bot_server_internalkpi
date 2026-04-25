@@ -12,8 +12,6 @@ services:
         sync: false
       - key: SEATALK_SIGNING_SECRET
         sync: false
-      - key: KPI_WEBHOOK_SECRET
-        sync: false
       - key: GOOGLE_CREDENTIALS_JSON
         sync: false
       - key: SHEET_ID
@@ -31,9 +29,9 @@ services:
       - key: APP_TIMEZONE
         value: Asia/Manila
       - key: ENABLE_SHEET_POLLING
-        value: "false"
+        value: "true"
       - key: POLL_INTERVAL
-        value: 5s
+        value: 5m
       - key: SETTLE_INTERVAL
         value: 7s
       - key: IMAGE_FORMAT

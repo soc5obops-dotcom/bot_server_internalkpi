@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -16,7 +15,6 @@ import (
 
 type App struct {
 	cfg      config.Config
-	ctx      context.Context
 	sheets   *sheets.Client
 	seatalk  *seatalk.Client
 	renderer *render.Renderer
@@ -33,7 +31,6 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 
 	a := &App{
 		cfg:      cfg,
-		ctx:      ctx,
 		sheets:   sheetsClient,
 		seatalk:  seatalkClient,
 		renderer: renderer,
@@ -57,27 +54,6 @@ func (a *App) StartBackground(ctx context.Context) {
 		go a.watcher.Run(ctx)
 	}
 	go a.runDailyGroupSync(ctx)
-}
-
-func (a *App) KPIChangeHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		secret := r.Header.Get("X-KPI-Webhook-Secret")
-		if secret == "" {
-			secret = r.URL.Query().Get("secret")
-		}
-		if secret != a.cfg.KPIWebhookSecret {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		a.watcher.Trigger(a.ctx, "apps-script")
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusAccepted)
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "scheduled"})
-	})
 }
 
 func (a *App) SeaTalkCallbackHandler() http.Handler {

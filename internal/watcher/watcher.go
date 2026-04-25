@@ -60,41 +60,35 @@ func (w *Watcher) Run(ctx context.Context) {
 	defer ticker.Stop()
 
 	var lastHash string
-	var pendingHash string
-	var pendingSince time.Time
 	var initialized bool
+	poll := func() {
+		values, err := w.sheets.Values(ctx, w.cfg.TabName, w.cfg.WatchRange)
+		if err != nil {
+			log.Printf("watch values: %v", err)
+			return
+		}
+		currentHash := hashValues(values)
+		if !initialized {
+			lastHash = currentHash
+			initialized = true
+			log.Printf("watch initialized for %s!%s; polling every %s", w.cfg.TabName, w.cfg.WatchRange, w.cfg.PollInterval)
+			return
+		}
+		if currentHash != lastHash {
+			log.Printf("change detected in %s!%s; capture scheduled after %s", w.cfg.TabName, w.cfg.WatchRange, w.cfg.SettleInterval)
+			w.Trigger(ctx, "sheet-polling")
+			lastHash = currentHash
+		}
+	}
+
+	poll()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			values, err := w.sheets.Values(ctx, w.cfg.TabName, w.cfg.WatchRange)
-			if err != nil {
-				log.Printf("watch values: %v", err)
-				continue
-			}
-			currentHash := hashValues(values)
-			if !initialized {
-				lastHash = currentHash
-				initialized = true
-				log.Printf("watch initialized for %s!%s", w.cfg.TabName, w.cfg.WatchRange)
-				continue
-			}
-			if currentHash != lastHash {
-				if currentHash != pendingHash {
-					pendingHash = currentHash
-					pendingSince = time.Now()
-					log.Printf("change detected in %s!%s; waiting %s", w.cfg.TabName, w.cfg.WatchRange, w.cfg.SettleInterval)
-				}
-				if time.Since(pendingSince) >= w.cfg.SettleInterval {
-					go w.runAlert(ctx)
-					lastHash = currentHash
-					pendingHash = ""
-				}
-			} else {
-				pendingHash = ""
-			}
+			poll()
 		}
 	}
 }

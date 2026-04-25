@@ -12,7 +12,6 @@ type Config struct {
 	SeaTalkAppID          string
 	SeaTalkAppSecret      string
 	SeaTalkSigningSecret  string
-	KPIWebhookSecret      string
 	GoogleCredentials     string
 	GoogleCredentialsJSON string
 	SheetID               string
@@ -45,14 +44,13 @@ func Load() (Config, error) {
 		PNGDPI:             mustInt("PNG_DPI", 180),
 		PNGMaxWidth:        mustInt("PNG_MAX_WIDTH", 1600),
 		WorkDir:            getenv("WORK_DIR", "tmp"),
-		EnableSheetPolling: getenv("ENABLE_SHEET_POLLING", "false") == "true",
-		PollInterval:       mustDuration("POLL_INTERVAL", 5*time.Second),
+		EnableSheetPolling: getenv("ENABLE_SHEET_POLLING", "true") == "true",
+		PollInterval:       mustDuration("POLL_INTERVAL", 5*time.Minute),
 		SettleInterval:     mustDuration("SETTLE_INTERVAL", 7*time.Second),
 	}
 	cfg.SeaTalkAppID = os.Getenv("SEATALK_APP_ID")
 	cfg.SeaTalkAppSecret = os.Getenv("SEATALK_APP_SECRET")
 	cfg.SeaTalkSigningSecret = os.Getenv("SEATALK_SIGNING_SECRET")
-	cfg.KPIWebhookSecret = os.Getenv("KPI_WEBHOOK_SECRET")
 	cfg.GoogleCredentials = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 	cfg.GoogleCredentialsJSON = os.Getenv("GOOGLE_CREDENTIALS_JSON")
 
@@ -60,7 +58,6 @@ func Load() (Config, error) {
 		"SEATALK_APP_ID":         cfg.SeaTalkAppID,
 		"SEATALK_APP_SECRET":     cfg.SeaTalkAppSecret,
 		"SEATALK_SIGNING_SECRET": cfg.SeaTalkSigningSecret,
-		"KPI_WEBHOOK_SECRET":     cfg.KPIWebhookSecret,
 	} {
 		if value == "" {
 			return Config{}, fmt.Errorf("%s is required", name)

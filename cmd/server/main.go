@@ -36,7 +36,6 @@ func main() {
 		_, _ = w.Write([]byte("ok"))
 	})
 	mux.Handle("/seatalk/callback", application.SeaTalkCallbackHandler())
-	mux.Handle("/kpi/change", application.KPIChangeHandler())
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,

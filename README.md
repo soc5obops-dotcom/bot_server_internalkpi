@@ -1,6 +1,6 @@
 # Internal KPI SeaTalk Bot
 
-Lightweight Go server that receives change signals for `Internal_kpi!S15:T39`. When values change and remain stable for 7 seconds, it exports `Internal_kpi!G1:U39` as a PDF, renders it with Poppler and ImageMagick, then posts a SeaTalk interactive card plus the captured KPI image to every known group.
+Lightweight Go server that polls `Internal_kpi!S15:T39` every 5 minutes. When values change, it waits 7 seconds, exports `Internal_kpi!G1:U39` as a PDF, renders it with Poppler and ImageMagick, then posts a SeaTalk interactive card plus the captured KPI image to every known group.
 
 ## Requirements
 
@@ -19,7 +19,6 @@ Copy `.env.example` to `.env` and fill in:
 SEATALK_APP_ID=
 SEATALK_APP_SECRET=
 SEATALK_SIGNING_SECRET=
-KPI_WEBHOOK_SECRET=
 GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/google-service-account.json
 ```
 
@@ -33,27 +32,17 @@ https://your-public-host/seatalk/callback
 
 SeaTalk callback verification is handled by the server.
 
-## Apps Script Polling
+## Sheet Polling
 
-Use [appscript/InternalKPIWatcher.gs](appscript/InternalKPIWatcher.gs) as a bound Apps Script on the spreadsheet. It checks `Internal_kpi!S15:T39` on a time-driven trigger, stores a hash of the watched values, and calls the Go server only when the hash changes.
-
-In Apps Script, run once:
-
-```javascript
-configureInternalKpiWatcher(
-  'https://your-public-host/kpi/change',
-  'same-value-as-KPI_WEBHOOK_SECRET'
-);
-installInternalKpiWatcher();
-```
-
-Apps Script time-driven triggers are minute-level polling, not immediate cell-change events. After Apps Script detects a change, the Go server waits `SETTLE_INTERVAL`, default `7s`, before capturing and sending.
-
-The Go server also has built-in polling available for fallback:
+The server polls Google Sheets directly. Defaults:
 
 ```env
 ENABLE_SHEET_POLLING=true
+POLL_INTERVAL=5m
+SETTLE_INTERVAL=7s
 ```
+
+On startup, the server reads the watch range once to establish a baseline. Every 5 minutes after that, if the watched values differ from the last seen values, it schedules capture after `SETTLE_INTERVAL`.
 
 Image render defaults:
 
@@ -84,7 +73,6 @@ Set these secret environment variables in Render:
 SEATALK_APP_ID=
 SEATALK_APP_SECRET=
 SEATALK_SIGNING_SECRET=
-KPI_WEBHOOK_SECRET=
 GOOGLE_CREDENTIALS_JSON=
 ```
 
@@ -95,10 +83,9 @@ After deployment, use the Render service URL:
 ```text
 https://your-render-service.onrender.com/healthz
 https://your-render-service.onrender.com/seatalk/callback
-https://your-render-service.onrender.com/kpi/change
 ```
 
-Set SeaTalk callback URL to `/seatalk/callback`, and set the Apps Script server URL to `/kpi/change`.
+Set the SeaTalk callback URL to `/seatalk/callback`.
 
 ## Group ID Handling
 

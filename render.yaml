@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: internalkpi-seatalk-bot
+    runtime: docker
+    region: singapore
+    plan: starter
+    healthCheckPath: /healthz
+    envVars:
+      - key: SEATALK_APP_ID
+        sync: false
+      - key: SEATALK_APP_SECRET
+        sync: false
+      - key: SEATALK_SIGNING_SECRET
+        sync: false
+      - key: KPI_WEBHOOK_SECRET
+        sync: false
+      - key: GOOGLE_CREDENTIALS_JSON
+        sync: false
+      - key: SHEET_ID
+        value: 1pLN46ZKWJIsidswMeoxhZwoacuFMR08sCaTFG6mLytc
+      - key: TAB_NAME
+        value: Internal_kpi
+      - key: WATCH_RANGE
+        value: S15:T39
+      - key: CAPTURE_RANGE
+        value: G1:U39
+      - key: BOT_CONFIG_TAB
+        value: bot_config
+      - key: REPORT_LINK
+        value: https://docs.google.com/spreadsheets/d/1fz0N-8-BWs_6ub4UzfKhBdLIjlRpwc94p4DJHNB6SvU/edit?gid=1887496356#gid=1887496356
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: ENABLE_SHEET_POLLING
+        value: "false"
+      - key: POLL_INTERVAL
+        value: 5s
+      - key: SETTLE_INTERVAL
+        value: 7s
+      - key: IMAGE_FORMAT
+        value: png
+      - key: PNG_DPI
+        value: "180"
+      - key: PNG_MAX_WIDTH
+        value: "1600"
+      - key: WORK_DIR
+        value: /app/tmp

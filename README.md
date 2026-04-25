@@ -74,6 +74,32 @@ Health check:
 GET /healthz
 ```
 
+## Deploy On Render
+
+This repo includes [render.yaml](render.yaml) for a Docker web service. On Render, create the service from the repo blueprint or create a Docker web service manually.
+
+Set these secret environment variables in Render:
+
+```env
+SEATALK_APP_ID=
+SEATALK_APP_SECRET=
+SEATALK_SIGNING_SECRET=
+KPI_WEBHOOK_SECRET=
+GOOGLE_CREDENTIALS_JSON=
+```
+
+For `GOOGLE_CREDENTIALS_JSON`, paste the full Google service account JSON as the environment value. You do not need `GOOGLE_APPLICATION_CREDENTIALS` on Render.
+
+After deployment, use the Render service URL:
+
+```text
+https://your-render-service.onrender.com/healthz
+https://your-render-service.onrender.com/seatalk/callback
+https://your-render-service.onrender.com/kpi/change
+```
+
+Set SeaTalk callback URL to `/seatalk/callback`, and set the Apps Script server URL to `/kpi/change`.
+
 ## Group ID Handling
 
 When the bot is added to a SeaTalk group, the callback handler stores the `group_id` in `bot_config!A2:A`. When the bot is removed, it removes that ID. A daily sync normalizes the sheet list by sorting and deduplicating known IDs.

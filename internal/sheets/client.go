@@ -19,16 +19,20 @@ type Client struct {
 	tokenSrc oauth2.TokenSource
 }
 
-func New(ctx context.Context, credentialsPath, sheetID string) (*Client, error) {
-	credentialsJSON, err := os.ReadFile(credentialsPath)
-	if err != nil {
-		return nil, fmt.Errorf("read google credentials: %w", err)
+func New(ctx context.Context, credentialsPath, credentialsJSON, sheetID string) (*Client, error) {
+	credentialsBytes := []byte(credentialsJSON)
+	if len(credentialsBytes) == 0 {
+		fileBytes, err := os.ReadFile(credentialsPath)
+		if err != nil {
+			return nil, fmt.Errorf("read google credentials: %w", err)
+		}
+		credentialsBytes = fileBytes
 	}
-	creds, err := google.CredentialsFromJSON(ctx, credentialsJSON, sheetsapi.SpreadsheetsScope, "https://www.googleapis.com/auth/drive.readonly")
+	creds, err := google.CredentialsFromJSON(ctx, credentialsBytes, sheetsapi.SpreadsheetsScope, "https://www.googleapis.com/auth/drive.readonly")
 	if err != nil {
 		return nil, fmt.Errorf("parse google credentials: %w", err)
 	}
-	svc, err := sheetsapi.NewService(ctx, option.WithCredentialsFile(credentialsPath), option.WithScopes(sheetsapi.SpreadsheetsScope, "https://www.googleapis.com/auth/drive.readonly"))
+	svc, err := sheetsapi.NewService(ctx, option.WithCredentialsJSON(credentialsBytes), option.WithScopes(sheetsapi.SpreadsheetsScope, "https://www.googleapis.com/auth/drive.readonly"))
 	if err != nil {
 		return nil, err
 	}

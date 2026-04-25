@@ -24,7 +24,7 @@ type App struct {
 }
 
 func New(ctx context.Context, cfg config.Config) (*App, error) {
-	sheetsClient, err := sheets.New(ctx, cfg.GoogleCredentials, cfg.SheetID)
+	sheetsClient, err := sheets.New(ctx, cfg.GoogleCredentials, cfg.GoogleCredentialsJSON, cfg.SheetID)
 	if err != nil {
 		return nil, err
 	}

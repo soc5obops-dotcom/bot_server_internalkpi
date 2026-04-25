@@ -35,7 +35,6 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 	stamp := time.Now().Format("20060102-150405")
 	pdfPath := filepath.Join(r.workDir, "kpi-"+stamp+".pdf")
 	prefix := filepath.Join(r.workDir, "kpi-"+stamp)
-	rawPNG := prefix + "-1.png"
 	finalPath := prefix + "." + r.ext()
 
 	if err := r.downloadPDF(ctx, sheetID, gid, captureRange, bearerToken, pdfPath); err != nil {
@@ -43,6 +42,10 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 	}
 	dpi := fmt.Sprint(r.dpi)
 	if err := run(ctx, "pdftoppm", "-png", "-r", dpi, "-singlefile", pdfPath, prefix); err != nil {
+		return "", err
+	}
+	rawPNG, err := firstExisting(prefix+".png", prefix+"-1.png")
+	if err != nil {
 		return "", err
 	}
 	args := []string{
@@ -111,6 +114,15 @@ func (r *Renderer) downloadPDF(ctx context.Context, sheetID string, gid int64, c
 }
 
 func (r *Renderer) Cleanup() {}
+
+func firstExisting(paths ...string) (string, error) {
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
+	}
+	return "", fmt.Errorf("no rendered png found at %s", strings.Join(paths, " or "))
+}
 
 func (r *Renderer) ext() string {
 	if r.format == "jpeg" {

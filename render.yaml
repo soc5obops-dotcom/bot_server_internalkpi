@@ -12,6 +12,8 @@ services:
         sync: false
       - key: SEATALK_SIGNING_SECRET
         sync: false
+      - key: ADMIN_TOKEN
+        sync: false
       - key: GOOGLE_CREDENTIALS_JSON
         sync: false
       - key: SHEET_ID

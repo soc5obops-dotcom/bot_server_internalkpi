@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -60,6 +61,44 @@ func (a *App) SeaTalkCallbackHandler() http.Handler {
 	return seatalk.CallbackHandler(a.cfg.SeaTalkSigningSecret, func(ctx context.Context, event seatalk.CallbackEvent) error {
 		return handleSeaTalkEvent(ctx, event, a.cfg.BotConfigTab, a.sheets)
 	})
+}
+
+func (a *App) TestReportHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if a.cfg.AdminToken == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		if !validAdminToken(r, a.cfg.AdminToken) {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if err := a.watcher.SendNow(r.Context()); err != nil {
+			log.Printf("manual test report failed: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "sent"})
+	})
+}
+
+func validAdminToken(r *http.Request, expected string) bool {
+	token := r.Header.Get("X-Admin-Token")
+	if token == "" {
+		const prefix = "Bearer "
+		auth := r.Header.Get("Authorization")
+		if len(auth) > len(prefix) && auth[:len(prefix)] == prefix {
+			token = auth[len(prefix):]
+		}
+	}
+	return token == expected
 }
 
 type groupIDStore interface {

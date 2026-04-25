@@ -19,6 +19,7 @@ Copy `.env.example` to `.env` and fill in:
 SEATALK_APP_ID=
 SEATALK_APP_SECRET=
 SEATALK_SIGNING_SECRET=
+ADMIN_TOKEN=
 GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/google-service-account.json
 ```
 
@@ -63,6 +64,15 @@ Health check:
 GET /healthz
 ```
 
+Manual report test, enabled only when `ADMIN_TOKEN` is set:
+
+```bash
+curl -X POST https://bot-server-internalkpi.onrender.com/admin/test-report \
+  -H "Authorization: Bearer your-admin-token"
+```
+
+This immediately captures the report and sends the SeaTalk interactive card plus image to group IDs in `bot_config!A2:A`.
+
 ## Deploy On Render
 
 This repo includes [render.yaml](render.yaml) for a Docker web service. On Render, create the service from the repo blueprint or create a Docker web service manually.
@@ -73,6 +83,7 @@ Set these secret environment variables in Render:
 SEATALK_APP_ID=
 SEATALK_APP_SECRET=
 SEATALK_SIGNING_SECRET=
+ADMIN_TOKEN=
 GOOGLE_CREDENTIALS_JSON=
 ```
 
@@ -83,6 +94,7 @@ After deployment, use the Render service URL:
 ```text
 https://your-render-service.onrender.com/healthz
 https://your-render-service.onrender.com/seatalk/callback
+https://your-render-service.onrender.com/admin/test-report
 ```
 
 Set the SeaTalk callback URL to `/seatalk/callback`.

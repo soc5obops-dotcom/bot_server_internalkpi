@@ -12,6 +12,7 @@ type Config struct {
 	SeaTalkAppID          string
 	SeaTalkAppSecret      string
 	SeaTalkSigningSecret  string
+	AdminToken            string
 	GoogleCredentials     string
 	GoogleCredentialsJSON string
 	SheetID               string
@@ -51,6 +52,7 @@ func Load() (Config, error) {
 	cfg.SeaTalkAppID = os.Getenv("SEATALK_APP_ID")
 	cfg.SeaTalkAppSecret = os.Getenv("SEATALK_APP_SECRET")
 	cfg.SeaTalkSigningSecret = os.Getenv("SEATALK_SIGNING_SECRET")
+	cfg.AdminToken = os.Getenv("ADMIN_TOKEN")
 	cfg.GoogleCredentials = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 	cfg.GoogleCredentialsJSON = os.Getenv("GOOGLE_CREDENTIALS_JSON")
 

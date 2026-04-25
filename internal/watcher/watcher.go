@@ -127,6 +127,25 @@ func (w *Watcher) runAlert(parent context.Context) {
 	}
 }
 
+func (w *Watcher) SendNow(ctx context.Context) error {
+	w.mu.Lock()
+	if w.alerting {
+		w.mu.Unlock()
+		return fmt.Errorf("alert already running")
+	}
+	w.alerting = true
+	w.mu.Unlock()
+	defer func() {
+		w.mu.Lock()
+		w.alerting = false
+		w.mu.Unlock()
+	}()
+
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	return w.alert(ctx)
+}
+
 func (w *Watcher) alert(ctx context.Context) error {
 	gid, err := w.sheets.SheetGID(ctx, w.cfg.TabName)
 	if err != nil {
@@ -156,9 +175,12 @@ func (w *Watcher) alert(ctx context.Context) error {
 			log.Printf("send card to %s: %v", groupID, err)
 			continue
 		}
+		log.Printf("sent interactive card to %s", groupID)
 		if err := w.seatalk.SendImage(ctx, groupID, image); err != nil {
 			log.Printf("send image to %s: %v", groupID, err)
+			continue
 		}
+		log.Printf("sent report image to %s", groupID)
 	}
 	return nil
 }

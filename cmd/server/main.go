@@ -36,6 +36,7 @@ func main() {
 		_, _ = w.Write([]byte("ok"))
 	})
 	mux.Handle("/seatalk/callback", application.SeaTalkCallbackHandler())
+	mux.Handle("/admin/test-report", application.TestReportHandler())
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,

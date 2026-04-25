@@ -1,0 +1,129 @@
+package render
+
+import (
+	"context"
+	"encoding/base64"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
+)
+
+type Renderer struct {
+	workDir  string
+	format   string
+	dpi      int
+	maxWidth int
+}
+
+func New(workDir, format string, dpi, maxWidth int) *Renderer {
+	_ = os.MkdirAll(workDir, 0o755)
+	return &Renderer{
+		workDir:  workDir,
+		format:   strings.TrimPrefix(format, "."),
+		dpi:      dpi,
+		maxWidth: maxWidth,
+	}
+}
+
+func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captureRange string, bearerToken string) (string, error) {
+	stamp := time.Now().Format("20060102-150405")
+	pdfPath := filepath.Join(r.workDir, "kpi-"+stamp+".pdf")
+	prefix := filepath.Join(r.workDir, "kpi-"+stamp)
+	rawPNG := prefix + "-1.png"
+	finalPath := prefix + "." + r.ext()
+
+	if err := r.downloadPDF(ctx, sheetID, gid, captureRange, bearerToken, pdfPath); err != nil {
+		return "", err
+	}
+	dpi := fmt.Sprint(r.dpi)
+	if err := run(ctx, "pdftoppm", "-png", "-r", dpi, "-singlefile", pdfPath, prefix); err != nil {
+		return "", err
+	}
+	args := []string{
+		rawPNG,
+		"-density", dpi,
+		"-resize", fmt.Sprintf("%dx>", r.maxWidth),
+		"-quality", "92",
+		"-strip",
+	}
+	if r.ext() == "jpg" {
+		args = append(args, "-background", "white", "-alpha", "remove", "-alpha", "off")
+	}
+	args = append(args, finalPath)
+	if err := run(ctx, "magick", args...); err != nil {
+		if fallbackErr := run(ctx, "convert", args...); fallbackErr != nil {
+			return "", fmt.Errorf("magick failed: %w; convert fallback failed: %w", err, fallbackErr)
+		}
+	}
+	content, err := os.ReadFile(finalPath)
+	if err != nil {
+		return "", err
+	}
+	encoded := base64.StdEncoding.EncodeToString(content)
+	if len(encoded) > 5*1024*1024 {
+		return "", fmt.Errorf("encoded image is %.2f MB, SeaTalk limit is 5 MB", float64(len(encoded))/(1024*1024))
+	}
+	return encoded, nil
+}
+
+func (r *Renderer) downloadPDF(ctx context.Context, sheetID string, gid int64, captureRange, bearerToken, path string) error {
+	params := url.Values{}
+	params.Set("format", "pdf")
+	params.Set("gid", fmt.Sprint(gid))
+	params.Set("range", captureRange)
+	params.Set("size", "A4")
+	params.Set("portrait", "false")
+	params.Set("fitw", "true")
+	params.Set("sheetnames", "false")
+	params.Set("printtitle", "false")
+	params.Set("pagenumbers", "false")
+	params.Set("gridlines", "false")
+	params.Set("fzr", "false")
+	exportURL := "https://docs.google.com/spreadsheets/d/" + sheetID + "/export?" + params.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, exportURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+bearerToken)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("sheet export status %d: %s", resp.StatusCode, string(body))
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = io.Copy(file, resp.Body)
+	return err
+}
+
+func (r *Renderer) Cleanup() {}
+
+func (r *Renderer) ext() string {
+	if r.format == "jpeg" {
+		return "jpg"
+	}
+	return r.format
+}
+
+func run(ctx context.Context, name string, args ...string) error {
+	cmd := exec.CommandContext(ctx, name, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s %v: %w: %s", name, args, err, string(output))
+	}
+	return nil
+}

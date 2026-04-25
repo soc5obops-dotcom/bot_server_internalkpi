@@ -1,0 +1,112 @@
+package config
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+)
+
+type Config struct {
+	Port                 string
+	SeaTalkAppID         string
+	SeaTalkAppSecret     string
+	SeaTalkSigningSecret string
+	KPIWebhookSecret     string
+	GoogleCredentials    string
+	SheetID              string
+	TabName              string
+	WatchRange           string
+	CaptureRange         string
+	BotConfigTab         string
+	ReportLink           string
+	Timezone             string
+	EnableSheetPolling   bool
+	PollInterval         time.Duration
+	SettleInterval       time.Duration
+	ImageFormat          string
+	PNGDPI               int
+	PNGMaxWidth          int
+	WorkDir              string
+}
+
+func Load() (Config, error) {
+	cfg := Config{
+		Port:               getenv("PORT", "8080"),
+		SheetID:            getenv("SHEET_ID", "1pLN46ZKWJIsidswMeoxhZwoacuFMR08sCaTFG6mLytc"),
+		TabName:            getenv("TAB_NAME", "Internal_kpi"),
+		WatchRange:         getenv("WATCH_RANGE", "S15:T39"),
+		CaptureRange:       getenv("CAPTURE_RANGE", "G1:U39"),
+		BotConfigTab:       getenv("BOT_CONFIG_TAB", "bot_config"),
+		ReportLink:         getenv("REPORT_LINK", "https://docs.google.com/spreadsheets/d/1fz0N-8-BWs_6ub4UzfKhBdLIjlRpwc94p4DJHNB6SvU/edit?gid=1887496356#gid=1887496356"),
+		Timezone:           getenv("APP_TIMEZONE", "Asia/Manila"),
+		ImageFormat:        getenv("IMAGE_FORMAT", "png"),
+		PNGDPI:             mustInt("PNG_DPI", 180),
+		PNGMaxWidth:        mustInt("PNG_MAX_WIDTH", 1600),
+		WorkDir:            getenv("WORK_DIR", "tmp"),
+		EnableSheetPolling: getenv("ENABLE_SHEET_POLLING", "false") == "true",
+		PollInterval:       mustDuration("POLL_INTERVAL", 5*time.Second),
+		SettleInterval:     mustDuration("SETTLE_INTERVAL", 7*time.Second),
+	}
+	cfg.SeaTalkAppID = os.Getenv("SEATALK_APP_ID")
+	cfg.SeaTalkAppSecret = os.Getenv("SEATALK_APP_SECRET")
+	cfg.SeaTalkSigningSecret = os.Getenv("SEATALK_SIGNING_SECRET")
+	cfg.KPIWebhookSecret = os.Getenv("KPI_WEBHOOK_SECRET")
+	cfg.GoogleCredentials = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+	for name, value := range map[string]string{
+		"SEATALK_APP_ID":                 cfg.SeaTalkAppID,
+		"SEATALK_APP_SECRET":             cfg.SeaTalkAppSecret,
+		"SEATALK_SIGNING_SECRET":         cfg.SeaTalkSigningSecret,
+		"KPI_WEBHOOK_SECRET":             cfg.KPIWebhookSecret,
+		"GOOGLE_APPLICATION_CREDENTIALS": cfg.GoogleCredentials,
+	} {
+		if value == "" {
+			return Config{}, fmt.Errorf("%s is required", name)
+		}
+	}
+
+	if cfg.ImageFormat != "png" && cfg.ImageFormat != "jpg" && cfg.ImageFormat != "jpeg" {
+		return Config{}, fmt.Errorf("IMAGE_FORMAT must be png or jpg")
+	}
+	if cfg.PNGDPI <= 0 {
+		return Config{}, fmt.Errorf("PNG_DPI must be greater than 0")
+	}
+	if cfg.PNGMaxWidth <= 0 {
+		return Config{}, fmt.Errorf("PNG_MAX_WIDTH must be greater than 0")
+	}
+	return cfg, nil
+}
+
+func getenv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
+}
+
+func mustDuration(key string, fallback time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	if parsed, err := time.ParseDuration(value); err == nil {
+		return parsed
+	}
+	if seconds, err := strconv.Atoi(value); err == nil {
+		return time.Duration(seconds) * time.Second
+	}
+	return fallback
+}
+
+func mustInt(key string, fallback int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}

@@ -1,0 +1,10 @@
+services:
+  internalkpi-bot:
+    build: .
+    env_file: .env
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      - ./tmp:/app/tmp
+      - ./service-account.json:/run/secrets/google-service-account.json:ro
+    restart: unless-stopped

@@ -71,17 +71,30 @@ func handleSeaTalkEvent(ctx context.Context, event seatalk.CallbackEvent, botCon
 	switch event.EventType {
 	case seatalk.EventBotAddedToGroupChat:
 		if event.Event.Group.GroupID == "" {
+			log.Printf("bot_added_to_group_chat received without group_id")
 			return nil
 		}
 		log.Printf("bot added to group %s (%s)", event.Event.Group.GroupID, event.Event.Group.GroupName)
-		return store.UpsertGroupID(ctx, botConfigTab, event.Event.Group.GroupID)
+		if err := store.UpsertGroupID(ctx, botConfigTab, event.Event.Group.GroupID); err != nil {
+			log.Printf("store group id %s in %s failed: %v", event.Event.Group.GroupID, botConfigTab, err)
+			return err
+		}
+		log.Printf("stored group id %s in %s", event.Event.Group.GroupID, botConfigTab)
+		return nil
 	case seatalk.EventBotRemovedFromGroupChat:
 		if event.Event.Group.GroupID == "" {
+			log.Printf("bot_removed_from_group_chat received without group_id")
 			return nil
 		}
 		log.Printf("bot removed from group %s (%s)", event.Event.Group.GroupID, event.Event.Group.GroupName)
-		return store.RemoveGroupID(ctx, botConfigTab, event.Event.Group.GroupID)
+		if err := store.RemoveGroupID(ctx, botConfigTab, event.Event.Group.GroupID); err != nil {
+			log.Printf("remove group id %s from %s failed: %v", event.Event.Group.GroupID, botConfigTab, err)
+			return err
+		}
+		log.Printf("removed group id %s from %s", event.Event.Group.GroupID, botConfigTab)
+		return nil
 	default:
+		log.Printf("ignored seatalk event type %s", event.EventType)
 		return nil
 	}
 }

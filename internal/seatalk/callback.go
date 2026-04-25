@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -29,18 +30,22 @@ func CallbackHandler(signingSecret string, handle func(context.Context, Callback
 		}
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
+			log.Printf("seatalk callback read body failed: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if !ValidSignature(signingSecret, body, r.Header.Get("Signature")) {
+			log.Printf("seatalk callback rejected: invalid signature")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		var event CallbackEvent
 		if err := json.Unmarshal(body, &event); err != nil {
+			log.Printf("seatalk callback decode failed: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		log.Printf("seatalk callback received: event_type=%s event_id=%s", event.EventType, event.EventID)
 		if event.EventType == EventVerification {
 			_ = json.NewEncoder(w).Encode(map[string]string{
 				"seatalk_challenge": event.Event.SeaTalkChallenge,

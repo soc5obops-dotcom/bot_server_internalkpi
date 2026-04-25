@@ -49,7 +49,7 @@ func New(appID, appSecret, signingSecret string) *Client {
 	}
 }
 
-func (c *Client) SendInteractiveAlert(ctx context.Context, groupID string, card AlertCard) error {
+func (c *Client) SendInteractiveAlert(ctx context.Context, groupID string, card AlertCard, imageBase64 string) error {
 	description := fmt.Sprintf(
 		"Control Tower Latest Update: %s\n----------------------------------\n🏆Month-to-Date\n╰⪼ OTP-1: %s\n╰⪼ OTP-2: %s\n╰⪼ MDT: %s\n----------------------------------",
 		blank(card.ControlTowerUpdate),
@@ -74,6 +74,12 @@ func (c *Client) SendInteractiveAlert(ctx context.Context, groupID string, card 
 						"description": map[string]any{
 							"format": 1,
 							"text":   description,
+						},
+					},
+					map[string]any{
+						"element_type": "image",
+						"image": map[string]any{
+							"content": imageBase64,
 						},
 					},
 					map[string]any{

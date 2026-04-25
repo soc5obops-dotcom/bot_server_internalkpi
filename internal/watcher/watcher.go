@@ -33,7 +33,7 @@ type Sheets interface {
 }
 
 type SeaTalk interface {
-	SendInteractiveAlert(context.Context, string, seatalk.AlertCard) error
+	SendInteractiveAlert(context.Context, string, seatalk.AlertCard, string) error
 	SendImage(context.Context, string, string) error
 }
 
@@ -171,16 +171,11 @@ func (w *Watcher) alert(ctx context.Context) error {
 		return err
 	}
 	for _, groupID := range groupIDs {
-		if err := w.seatalk.SendInteractiveAlert(ctx, groupID, card); err != nil {
+		if err := w.seatalk.SendInteractiveAlert(ctx, groupID, card, image); err != nil {
 			log.Printf("send card to %s: %v", groupID, err)
 			continue
 		}
-		log.Printf("sent interactive card to %s", groupID)
-		if err := w.seatalk.SendImage(ctx, groupID, image); err != nil {
-			log.Printf("send image to %s: %v", groupID, err)
-			continue
-		}
-		log.Printf("sent report image to %s", groupID)
+		log.Printf("sent interactive card with report image to %s", groupID)
 	}
 	return nil
 }

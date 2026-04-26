@@ -35,9 +35,9 @@ func Load() (Config, error) {
 	cfg := Config{
 		Port:               getenv("PORT", "8080"),
 		SheetID:            getenv("SHEET_ID", "1pLN46ZKWJIsidswMeoxhZwoacuFMR08sCaTFG6mLytc"),
-		TabName:            getenv("TAB_NAME", "Internal_kpi"),
-		WatchRange:         getenv("WATCH_RANGE", "S15:T39"),
-		CaptureRange:       getenv("CAPTURE_RANGE", "G1:U39"),
+		TabName:            getenv("TAB_NAME", "revamped_bot_server"),
+		WatchRange:         getenv("WATCH_RANGE", "X7:X59"),
+		CaptureRange:       getenv("CAPTURE_RANGE", "F1:AD59"),
 		BotConfigTab:       getenv("BOT_CONFIG_TAB", "bot_config"),
 		ReportLink:         getenv("REPORT_LINK", "https://docs.google.com/spreadsheets/d/1fz0N-8-BWs_6ub4UzfKhBdLIjlRpwc94p4DJHNB6SvU/edit?gid=1887496356#gid=1887496356"),
 		Timezone:           getenv("APP_TIMEZONE", "Asia/Manila"),

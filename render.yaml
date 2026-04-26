@@ -19,11 +19,11 @@ services:
       - key: SHEET_ID
         value: 1pLN46ZKWJIsidswMeoxhZwoacuFMR08sCaTFG6mLytc
       - key: TAB_NAME
-        value: Internal_kpi
+        value: revamped_bot_server
       - key: WATCH_RANGE
-        value: S15:T39
+        value: X7:X59
       - key: CAPTURE_RANGE
-        value: G1:U39
+        value: F1:AD59
       - key: BOT_CONFIG_TAB
         value: bot_config
       - key: REPORT_LINK

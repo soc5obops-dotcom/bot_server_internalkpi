@@ -1,13 +1,13 @@
 # Internal KPI SeaTalk Bot
 
-Lightweight Go server that polls `Internal_kpi!S15:T39` every 5 minutes. When values change, it waits 7 seconds, exports `Internal_kpi!G1:U39` as a PDF, renders it with Poppler and ImageMagick, then posts a SeaTalk interactive card plus the captured KPI image to every known group.
+Lightweight Go server that polls `revamped_bot_server!X7:X59` every 5 minutes. When values change, it waits 7 seconds, exports `revamped_bot_server!F1:AD59` as a PDF, renders it with Poppler and ImageMagick, then posts a SeaTalk interactive card plus the captured KPI image to every known group.
 
 ## Requirements
 
 - SeaTalk app with bot capability, event callback, and group message permission enabled.
 - Google service account with access to spreadsheet `1pLN46ZKWJIsidswMeoxhZwoacuFMR08sCaTFG6mLytc`.
 - The spreadsheet must have:
-  - `Internal_kpi`
+  - `revamped_bot_server`
   - `bot_config`
   - group IDs stored in `bot_config!A2:A`
 

@@ -23,6 +23,7 @@ type Config struct {
 	ReportLink            string
 	Timezone              string
 	EnableSheetPolling    bool
+	EnableScheduledSends  bool
 	PollInterval          time.Duration
 	SettleInterval        time.Duration
 	ImageFormat           string
@@ -33,21 +34,22 @@ type Config struct {
 
 func Load() (Config, error) {
 	cfg := Config{
-		Port:               getenv("PORT", "8080"),
-		SheetID:            getenv("SHEET_ID", "1pLN46ZKWJIsidswMeoxhZwoacuFMR08sCaTFG6mLytc"),
-		TabName:            getenv("TAB_NAME", "revamped_bot_server"),
-		WatchRange:         getenv("WATCH_RANGE", "X7:X59"),
-		CaptureRange:       getenv("CAPTURE_RANGE", "F1:AD59"),
-		BotConfigTab:       getenv("BOT_CONFIG_TAB", "bot_config"),
-		ReportLink:         getenv("REPORT_LINK", "https://docs.google.com/spreadsheets/d/1hYCkLL9Z4UR3WeKFuCDsOYch5v1FxmTJLGtk8UG_yyI/edit?gid=2001886446#gid=2001886446"),
-		Timezone:           getenv("APP_TIMEZONE", "Asia/Manila"),
-		ImageFormat:        getenv("IMAGE_FORMAT", "png"),
-		PNGDPI:             mustInt("PNG_DPI", 180),
-		PNGMaxWidth:        mustInt("PNG_MAX_WIDTH", 1600),
-		WorkDir:            getenv("WORK_DIR", "tmp"),
-		EnableSheetPolling: getenv("ENABLE_SHEET_POLLING", "true") == "true",
-		PollInterval:       mustDuration("POLL_INTERVAL", 5*time.Minute),
-		SettleInterval:     mustDuration("SETTLE_INTERVAL", 7*time.Second),
+		Port:                 getenv("PORT", "8080"),
+		SheetID:              getenv("SHEET_ID", "1pLN46ZKWJIsidswMeoxhZwoacuFMR08sCaTFG6mLytc"),
+		TabName:              getenv("TAB_NAME", "revamped_bot_server"),
+		WatchRange:           getenv("WATCH_RANGE", "X7:X59"),
+		CaptureRange:         getenv("CAPTURE_RANGE", "F1:AD59"),
+		BotConfigTab:         getenv("BOT_CONFIG_TAB", "bot_config"),
+		ReportLink:           getenv("REPORT_LINK", "https://docs.google.com/spreadsheets/d/1hYCkLL9Z4UR3WeKFuCDsOYch5v1FxmTJLGtk8UG_yyI/edit?gid=2001886446#gid=2001886446"),
+		Timezone:             getenv("APP_TIMEZONE", "Asia/Manila"),
+		ImageFormat:          getenv("IMAGE_FORMAT", "png"),
+		PNGDPI:               mustInt("PNG_DPI", 180),
+		PNGMaxWidth:          mustInt("PNG_MAX_WIDTH", 1600),
+		WorkDir:              getenv("WORK_DIR", "tmp"),
+		EnableSheetPolling:   getenv("ENABLE_SHEET_POLLING", "true") == "true",
+		EnableScheduledSends: getenv("ENABLE_SCHEDULED_SENDS", "true") == "true",
+		PollInterval:         mustDuration("POLL_INTERVAL", 5*time.Minute),
+		SettleInterval:       mustDuration("SETTLE_INTERVAL", 10*time.Second),
 	}
 	cfg.SeaTalkAppID = os.Getenv("SEATALK_APP_ID")
 	cfg.SeaTalkAppSecret = os.Getenv("SEATALK_APP_SECRET")

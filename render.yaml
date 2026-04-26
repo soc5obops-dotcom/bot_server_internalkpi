@@ -32,10 +32,12 @@ services:
         value: Asia/Manila
       - key: ENABLE_SHEET_POLLING
         value: "true"
+      - key: ENABLE_SCHEDULED_SENDS
+        value: "true"
       - key: POLL_INTERVAL
         value: 5m
       - key: SETTLE_INTERVAL
-        value: 7s
+        value: 10s
       - key: IMAGE_FORMAT
         value: png
       - key: PNG_DPI

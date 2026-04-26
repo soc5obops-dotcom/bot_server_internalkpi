@@ -54,6 +54,9 @@ func (a *App) StartBackground(ctx context.Context) {
 	if a.cfg.EnableSheetPolling {
 		go a.watcher.Run(ctx)
 	}
+	if a.cfg.EnableScheduledSends {
+		go a.watcher.RunSchedule(ctx)
+	}
 	go a.runDailyGroupSync(ctx)
 }
 

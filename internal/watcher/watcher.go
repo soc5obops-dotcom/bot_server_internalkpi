@@ -51,6 +51,8 @@ type Watcher struct {
 	alerting bool
 }
 
+var scheduledSendHours = []int{0, 3, 6, 9, 12, 15, 18, 21}
+
 func New(cfg Config, sheets Sheets, seatalk SeaTalk, renderer Renderer) *Watcher {
 	return &Watcher{cfg: cfg, sheets: sheets, seatalk: seatalk, renderer: renderer}
 }
@@ -93,6 +95,29 @@ func (w *Watcher) Run(ctx context.Context) {
 	}
 }
 
+func (w *Watcher) RunSchedule(ctx context.Context) {
+	location, err := time.LoadLocation(w.cfg.Timezone)
+	if err != nil {
+		log.Printf("scheduled send timezone %q invalid, using local timezone: %v", w.cfg.Timezone, err)
+		location = time.Local
+	}
+	log.Printf("scheduled sends enabled for %s at 12AM, 3AM, 6AM, 9AM, 12PM, 3PM, 6PM, 9PM", location)
+
+	for {
+		now := time.Now().In(location)
+		next := nextScheduledSend(now, scheduledSendHours)
+		timer := time.NewTimer(time.Until(next))
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		case <-timer.C:
+			log.Printf("scheduled send triggered for %s", next.Format("3:04PM Jan-02"))
+			w.runAlert(ctx)
+		}
+	}
+}
+
 func (w *Watcher) Trigger(ctx context.Context, source string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -103,6 +128,16 @@ func (w *Watcher) Trigger(ctx context.Context, source string) {
 	w.timer = time.AfterFunc(w.cfg.SettleInterval, func() {
 		w.runAlert(ctx)
 	})
+}
+
+func nextScheduledSend(now time.Time, hours []int) time.Time {
+	for _, hour := range hours {
+		next := time.Date(now.Year(), now.Month(), now.Day(), hour, 0, 0, 0, now.Location())
+		if next.After(now) {
+			return next
+		}
+	}
+	return time.Date(now.Year(), now.Month(), now.Day()+1, hours[0], 0, 0, 0, now.Location())
 }
 
 func (w *Watcher) runAlert(parent context.Context) {

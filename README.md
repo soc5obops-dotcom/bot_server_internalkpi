@@ -39,11 +39,14 @@ The server polls Google Sheets directly. Defaults:
 
 ```env
 ENABLE_SHEET_POLLING=true
+ENABLE_SCHEDULED_SENDS=true
 POLL_INTERVAL=5m
-SETTLE_INTERVAL=7s
+SETTLE_INTERVAL=10s
 ```
 
 On startup, the server reads the watch range once to establish a baseline. Every 5 minutes after that, if the watched values differ from the last seen values, it schedules capture after `SETTLE_INTERVAL`.
+
+Scheduled sends are also enabled by default. The bot sends the report every day at 12AM, 3AM, 6AM, 9AM, 12PM, 3PM, 6PM, and 9PM in `APP_TIMEZONE`.
 
 Image render defaults:
 

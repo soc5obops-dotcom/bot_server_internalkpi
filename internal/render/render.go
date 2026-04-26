@@ -54,7 +54,7 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 		"-fuzz", "2%",
 		"-trim", "+repage",
 		"-bordercolor", "white",
-		"-border", fmt.Sprintf("%dx0", r.horizontalMarginPixels()),
+		"-border", fmt.Sprintf("%dx%d", r.marginPixels(), r.marginPixels()),
 		"-resize", fmt.Sprintf("%dx>", r.maxWidth),
 		"-quality", "92",
 		"-strip",
@@ -119,8 +119,8 @@ func (r *Renderer) downloadPDF(ctx context.Context, sheetID string, gid int64, c
 
 func (r *Renderer) Cleanup() {}
 
-func (r *Renderer) horizontalMarginPixels() int {
-	pixels := r.dpi
+func (r *Renderer) marginPixels() int {
+	pixels := r.dpi / 4
 	if pixels < 1 {
 		return 1
 	}

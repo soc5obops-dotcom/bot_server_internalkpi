@@ -185,27 +185,9 @@ func (w *Watcher) alertCard(ctx context.Context) (seatalk.AlertCard, error) {
 	if err != nil {
 		return seatalk.AlertCard{}, err
 	}
-	otp1, err := w.cell(ctx, "S15")
-	if err != nil {
-		return seatalk.AlertCard{}, err
-	}
-	otp2, err := w.cell(ctx, "S16")
-	if err != nil {
-		return seatalk.AlertCard{}, err
-	}
-	mdt, err := w.cell(ctx, "C21")
-	if err != nil {
-		return seatalk.AlertCard{}, err
-	}
-	if otp2 == "" {
-		otp2 = "for update"
-	}
 	return seatalk.AlertCard{
 		UpdatedAt:          w.now(),
 		ControlTowerUpdate: controlTower,
-		OTP1:               otp1,
-		OTP2:               otp2,
-		MDT:                mdt,
 		ReportLink:         w.cfg.ReportLink,
 	}, nil
 }

@@ -40,9 +40,6 @@ type Client struct {
 type AlertCard struct {
 	UpdatedAt          time.Time
 	ControlTowerUpdate string
-	OTP1               string
-	OTP2               string
-	MDT                string
 	ReportLink         string
 }
 
@@ -148,11 +145,8 @@ func (c *Client) SendServiceInteractiveCard(ctx context.Context, employeeCodes [
 
 func (c *Client) SendInteractiveAlert(ctx context.Context, groupID string, card AlertCard, imageBase64 string) error {
 	description := fmt.Sprintf(
-		"Control Tower Latest Update: %s\n----------------------------------\n🏆Month-to-Date\n╰⪼ OTP-1: %s\n╰⪼ OTP-2: %s\n╰⪼ MDT: %s\n----------------------------------",
+		"----------------------------------\n\nOTP Control Tower\nLatest Update: %s\n----------------------------------",
 		blank(card.ControlTowerUpdate),
-		blank(card.OTP1),
-		blank(card.OTP2),
-		blank(card.MDT),
 	)
 	elements := []any{
 		map[string]any{

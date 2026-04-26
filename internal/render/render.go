@@ -10,6 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -41,15 +43,16 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 		return "", err
 	}
 	dpi := fmt.Sprint(r.dpi)
-	if err := run(ctx, "pdftoppm", "-png", "-r", dpi, "-singlefile", pdfPath, prefix); err != nil {
+	if err := run(ctx, "pdftoppm", "-png", "-r", dpi, pdfPath, prefix); err != nil {
 		return "", err
 	}
-	rawPNG, err := firstExisting(prefix+".png", prefix+"-1.png")
+	renderedPNGs, err := renderedPages(prefix)
 	if err != nil {
 		return "", err
 	}
-	args := []string{
-		rawPNG,
+	args := append([]string{}, renderedPNGs...)
+	args = append(args,
+		"-append",
 		"-density", dpi,
 		"-fuzz", "2%",
 		"-trim", "+repage",
@@ -58,7 +61,7 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 		"-resize", fmt.Sprintf("%dx>", r.maxWidth),
 		"-quality", "92",
 		"-strip",
-	}
+	)
 	if r.ext() == "jpg" {
 		args = append(args, "-background", "white", "-alpha", "remove", "-alpha", "off")
 	}
@@ -127,13 +130,30 @@ func (r *Renderer) marginPixels() int {
 	return pixels
 }
 
-func firstExisting(paths ...string) (string, error) {
-	for _, path := range paths {
-		if _, err := os.Stat(path); err == nil {
-			return path, nil
-		}
+func renderedPages(prefix string) ([]string, error) {
+	paths, err := filepath.Glob(prefix + "-*.png")
+	if err != nil {
+		return nil, err
 	}
-	return "", fmt.Errorf("no rendered png found at %s", strings.Join(paths, " or "))
+	if len(paths) == 0 {
+		if _, err := os.Stat(prefix + ".png"); err == nil {
+			return []string{prefix + ".png"}, nil
+		}
+		return nil, fmt.Errorf("no rendered png found at %s*.png", prefix)
+	}
+	sort.Slice(paths, func(i, j int) bool {
+		return pageNumber(paths[i], prefix) < pageNumber(paths[j], prefix)
+	})
+	return paths, nil
+}
+
+func pageNumber(path, prefix string) int {
+	value := strings.TrimSuffix(strings.TrimPrefix(path, prefix+"-"), ".png")
+	page, err := strconv.Atoi(value)
+	if err != nil {
+		return 0
+	}
+	return page
 }
 
 func (r *Renderer) ext() string {

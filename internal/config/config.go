@@ -39,7 +39,7 @@ func Load() (Config, error) {
 		WatchRange:         getenv("WATCH_RANGE", "X7:X59"),
 		CaptureRange:       getenv("CAPTURE_RANGE", "F1:AD59"),
 		BotConfigTab:       getenv("BOT_CONFIG_TAB", "bot_config"),
-		ReportLink:         getenv("REPORT_LINK", "https://docs.google.com/spreadsheets/d/1fz0N-8-BWs_6ub4UzfKhBdLIjlRpwc94p4DJHNB6SvU/edit?gid=1887496356#gid=1887496356"),
+		ReportLink:         getenv("REPORT_LINK", "https://docs.google.com/spreadsheets/d/1hYCkLL9Z4UR3WeKFuCDsOYch5v1FxmTJLGtk8UG_yyI/edit?gid=2001886446#gid=2001886446"),
 		Timezone:           getenv("APP_TIMEZONE", "Asia/Manila"),
 		ImageFormat:        getenv("IMAGE_FORMAT", "png"),
 		PNGDPI:             mustInt("PNG_DPI", 180),

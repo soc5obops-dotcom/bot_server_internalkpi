@@ -145,7 +145,7 @@ func (c *Client) SendServiceInteractiveCard(ctx context.Context, employeeCodes [
 
 func (c *Client) SendInteractiveAlert(ctx context.Context, groupID string, card AlertCard, imageBase64 string) error {
 	description := fmt.Sprintf(
-		"----------------------------------\n\nOTP Control Tower\nLatest Update: %s\n----------------------------------",
+		"----------------------------------\nOTP Control Tower\nLatest Update: %s\n----------------------------------",
 		blank(card.ControlTowerUpdate),
 	)
 	elements := []any{

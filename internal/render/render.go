@@ -50,12 +50,19 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 	if err != nil {
 		return "", err
 	}
-	args := append([]string{}, renderedPNGs...)
+	args := make([]string, 0, len(renderedPNGs)*6+16)
+	for _, page := range renderedPNGs {
+		args = append(args,
+			"(",
+			page,
+			"-density", dpi,
+			"-fuzz", "2%",
+			"-trim", "+repage",
+			")",
+		)
+	}
 	args = append(args,
 		"-append",
-		"-density", dpi,
-		"-fuzz", "2%",
-		"-trim", "+repage",
 		"-bordercolor", "white",
 		"-border", fmt.Sprintf("%dx%d", r.marginPixels(), r.marginPixels()),
 		"-resize", fmt.Sprintf("%dx>", r.maxWidth),

@@ -51,6 +51,10 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 	args := []string{
 		rawPNG,
 		"-density", dpi,
+		"-fuzz", "2%",
+		"-trim", "+repage",
+		"-bordercolor", "white",
+		"-border", fmt.Sprintf("%dx%d", r.marginPixels(), r.marginPixels()),
 		"-resize", fmt.Sprintf("%dx>", r.maxWidth),
 		"-quality", "92",
 		"-strip",
@@ -114,6 +118,14 @@ func (r *Renderer) downloadPDF(ctx context.Context, sheetID string, gid int64, c
 }
 
 func (r *Renderer) Cleanup() {}
+
+func (r *Renderer) marginPixels() int {
+	pixels := int(float64(r.dpi) * 0.5 / 72.0)
+	if pixels < 1 {
+		return 1
+	}
+	return pixels
+}
 
 func firstExisting(paths ...string) (string, error) {
 	for _, path := range paths {

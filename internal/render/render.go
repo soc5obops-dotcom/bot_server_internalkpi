@@ -16,6 +16,12 @@ import (
 	"time"
 )
 
+const (
+	maxEncodedImageBytes = 5 * 1024 * 1024
+	minRenderWidth       = 1200
+	widthStepRatio       = 0.85
+)
+
 type Renderer struct {
 	workDir  string
 	format   string
@@ -50,7 +56,29 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 	if err != nil {
 		return "", err
 	}
-	args := make([]string, 0, len(renderedPNGs)*6+16)
+	var lastEncodedSize int
+	for _, width := range renderWidths(r.maxWidth) {
+		args := r.magickArgs(renderedPNGs, dpi, width, finalPath)
+		if err := run(ctx, "magick", args...); err != nil {
+			if fallbackErr := run(ctx, "convert", args...); fallbackErr != nil {
+				return "", fmt.Errorf("magick failed: %w; convert fallback failed: %w", err, fallbackErr)
+			}
+		}
+		content, err := os.ReadFile(finalPath)
+		if err != nil {
+			return "", err
+		}
+		encoded := base64.StdEncoding.EncodeToString(content)
+		if len(encoded) <= maxEncodedImageBytes {
+			return encoded, nil
+		}
+		lastEncodedSize = len(encoded)
+	}
+	return "", fmt.Errorf("encoded image is %.2f MB, SeaTalk limit is 5 MB", float64(lastEncodedSize)/(1024*1024))
+}
+
+func (r *Renderer) magickArgs(renderedPNGs []string, dpi string, maxWidth int, finalPath string) []string {
+	args := make([]string, 0, len(renderedPNGs)*6+24)
 	for _, page := range renderedPNGs {
 		args = append(args,
 			"(",
@@ -65,28 +93,28 @@ func (r *Renderer) Capture(ctx context.Context, sheetID string, gid int64, captu
 		"-append",
 		"-bordercolor", "white",
 		"-border", fmt.Sprintf("%dx%d", r.marginPixels(), r.marginPixels()),
-		"-resize", fmt.Sprintf("%dx>", r.maxWidth),
+		"-filter", "Lanczos",
+		"-resize", fmt.Sprintf("%dx>", maxWidth),
+		"-unsharp", "0x0.75+0.75+0.008",
 		"-quality", "92",
+		"-define", "png:compression-level=9",
 		"-strip",
 	)
 	if r.ext() == "jpg" {
 		args = append(args, "-background", "white", "-alpha", "remove", "-alpha", "off")
 	}
-	args = append(args, finalPath)
-	if err := run(ctx, "magick", args...); err != nil {
-		if fallbackErr := run(ctx, "convert", args...); fallbackErr != nil {
-			return "", fmt.Errorf("magick failed: %w; convert fallback failed: %w", err, fallbackErr)
-		}
+	return append(args, finalPath)
+}
+
+func renderWidths(maxWidth int) []int {
+	widths := []int{maxWidth}
+	for width := int(float64(maxWidth) * widthStepRatio); width >= minRenderWidth; width = int(float64(width) * widthStepRatio) {
+		widths = append(widths, width)
 	}
-	content, err := os.ReadFile(finalPath)
-	if err != nil {
-		return "", err
+	if maxWidth > minRenderWidth && widths[len(widths)-1] != minRenderWidth {
+		widths = append(widths, minRenderWidth)
 	}
-	encoded := base64.StdEncoding.EncodeToString(content)
-	if len(encoded) > 5*1024*1024 {
-		return "", fmt.Errorf("encoded image is %.2f MB, SeaTalk limit is 5 MB", float64(len(encoded))/(1024*1024))
-	}
-	return encoded, nil
+	return widths
 }
 
 func (r *Renderer) downloadPDF(ctx context.Context, sheetID string, gid int64, captureRange, bearerToken, path string) error {

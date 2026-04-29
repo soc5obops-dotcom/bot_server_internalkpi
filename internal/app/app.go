@@ -37,23 +37,17 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		renderer: renderer,
 	}
 	a.watcher = watcher.New(watcher.Config{
-		SheetID:        cfg.SheetID,
-		TabName:        cfg.TabName,
-		WatchRange:     cfg.WatchRange,
-		CaptureRange:   cfg.CaptureRange,
-		BotConfigTab:   cfg.BotConfigTab,
-		ReportLink:     cfg.ReportLink,
-		Timezone:       cfg.Timezone,
-		PollInterval:   cfg.PollInterval,
-		SettleInterval: cfg.SettleInterval,
+		SheetID:      cfg.SheetID,
+		TabName:      cfg.TabName,
+		CaptureRange: cfg.CaptureRange,
+		BotConfigTab: cfg.BotConfigTab,
+		ReportLink:   cfg.ReportLink,
+		Timezone:     cfg.Timezone,
 	}, sheetsClient, seatalkClient, renderer)
 	return a, nil
 }
 
 func (a *App) StartBackground(ctx context.Context) {
-	if a.cfg.EnableSheetPolling {
-		go a.watcher.Run(ctx)
-	}
 	if a.cfg.EnableScheduledSends {
 		go a.watcher.RunSchedule(ctx)
 	}

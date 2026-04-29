@@ -1,6 +1,6 @@
 # Internal KPI SeaTalk Bot
 
-Lightweight Go server that polls `revamped_bot_server!X7:X59` every 5 minutes. When values change, it waits 7 seconds, exports `revamped_bot_server!F1:AD59` as a PDF, renders it with Poppler and ImageMagick, then posts a SeaTalk interactive card plus the captured KPI image to every known group.
+Lightweight Go server that exports `revamped_bot_server!F1:AD59` as a PDF on a fixed schedule, renders it with Poppler and ImageMagick, then posts a SeaTalk interactive card plus the captured KPI image to every known group.
 
 ## Requirements
 
@@ -33,27 +33,24 @@ https://your-public-host/seatalk/callback
 
 SeaTalk callback verification is handled by the server.
 
-## Sheet Polling
+## Scheduled Sends
 
-The server polls Google Sheets directly. Defaults:
+The server sends the report on a fixed schedule. Value changes in the watch range do not trigger report sends.
 
 ```env
-ENABLE_SHEET_POLLING=true
 ENABLE_SCHEDULED_SENDS=true
-POLL_INTERVAL=5m
-SETTLE_INTERVAL=10s
 ```
 
-On startup, the server reads the watch range once to establish a baseline. Every 5 minutes after that, if the watched values differ from the last seen values, it schedules capture after `SETTLE_INTERVAL`.
-
-Scheduled sends are also enabled by default. The bot sends the report every day at 12AM, 3AM, 6AM, 9AM, 12PM, 3PM, 6PM, and 9PM in `APP_TIMEZONE`.
+The bot sends the report every day at 6AM, 10AM, 1PM, 3PM, 6PM, 9PM, 12MN, and 4AM in `APP_TIMEZONE`.
 
 Image render defaults:
 
 ```env
-PNG_DPI=180
-PNG_MAX_WIDTH=1600
+PNG_DPI=300
+PNG_MAX_WIDTH=2400
 ```
+
+The renderer will retry narrower output sizes if the encoded image would exceed SeaTalk's 5 MB image limit.
 
 ## Run
 

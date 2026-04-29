@@ -20,8 +20,6 @@ services:
         value: 1pLN46ZKWJIsidswMeoxhZwoacuFMR08sCaTFG6mLytc
       - key: TAB_NAME
         value: revamped_bot_server
-      - key: WATCH_RANGE
-        value: X7:X59
       - key: CAPTURE_RANGE
         value: F1:AD59
       - key: BOT_CONFIG_TAB
@@ -30,19 +28,13 @@ services:
         value: https://docs.google.com/spreadsheets/d/1fz0N-8-BWs_6ub4UzfKhBdLIjlRpwc94p4DJHNB6SvU/edit?gid=1887496356#gid=1887496356
       - key: APP_TIMEZONE
         value: Asia/Manila
-      - key: ENABLE_SHEET_POLLING
-        value: "true"
       - key: ENABLE_SCHEDULED_SENDS
         value: "true"
-      - key: POLL_INTERVAL
-        value: 5m
-      - key: SETTLE_INTERVAL
-        value: 10s
       - key: IMAGE_FORMAT
         value: png
       - key: PNG_DPI
-        value: "180"
+        value: "300"
       - key: PNG_MAX_WIDTH
-        value: "1600"
+        value: "2400"
       - key: WORK_DIR
         value: /app/tmp

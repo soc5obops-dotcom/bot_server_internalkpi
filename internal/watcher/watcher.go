@@ -2,9 +2,6 @@ package watcher
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
@@ -14,15 +11,12 @@ import (
 )
 
 type Config struct {
-	SheetID        string
-	TabName        string
-	WatchRange     string
-	CaptureRange   string
-	BotConfigTab   string
-	ReportLink     string
-	Timezone       string
-	PollInterval   time.Duration
-	SettleInterval time.Duration
+	SheetID      string
+	TabName      string
+	CaptureRange string
+	BotConfigTab string
+	ReportLink   string
+	Timezone     string
 }
 
 type Sheets interface {
@@ -47,52 +41,13 @@ type Watcher struct {
 	seatalk  SeaTalk
 	renderer Renderer
 	mu       sync.Mutex
-	timer    *time.Timer
 	alerting bool
 }
 
-var scheduledSendHours = []int{0, 3, 6, 9, 12, 15, 18, 21}
+var scheduledSendHours = []int{0, 4, 6, 10, 13, 15, 18, 21}
 
 func New(cfg Config, sheets Sheets, seatalk SeaTalk, renderer Renderer) *Watcher {
 	return &Watcher{cfg: cfg, sheets: sheets, seatalk: seatalk, renderer: renderer}
-}
-
-func (w *Watcher) Run(ctx context.Context) {
-	ticker := time.NewTicker(w.cfg.PollInterval)
-	defer ticker.Stop()
-
-	var lastHash string
-	var initialized bool
-	poll := func() {
-		values, err := w.sheets.Values(ctx, w.cfg.TabName, w.cfg.WatchRange)
-		if err != nil {
-			log.Printf("watch values: %v", err)
-			return
-		}
-		currentHash := hashValues(values)
-		if !initialized {
-			lastHash = currentHash
-			initialized = true
-			log.Printf("watch initialized for %s!%s; polling every %s", w.cfg.TabName, w.cfg.WatchRange, w.cfg.PollInterval)
-			return
-		}
-		if currentHash != lastHash {
-			log.Printf("change detected in %s!%s; capture scheduled after %s", w.cfg.TabName, w.cfg.WatchRange, w.cfg.SettleInterval)
-			w.Trigger(ctx, "sheet-polling")
-			lastHash = currentHash
-		}
-	}
-
-	poll()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			poll()
-		}
-	}
 }
 
 func (w *Watcher) RunSchedule(ctx context.Context) {
@@ -101,7 +56,7 @@ func (w *Watcher) RunSchedule(ctx context.Context) {
 		log.Printf("scheduled send timezone %q invalid, using local timezone: %v", w.cfg.Timezone, err)
 		location = time.Local
 	}
-	log.Printf("scheduled sends enabled for %s at 12AM, 3AM, 6AM, 9AM, 12PM, 3PM, 6PM, 9PM", location)
+	log.Printf("scheduled sends enabled for %s at 6AM, 10AM, 1PM, 3PM, 6PM, 9PM, 12MN, 4AM", location)
 
 	for {
 		now := time.Now().In(location)
@@ -116,18 +71,6 @@ func (w *Watcher) RunSchedule(ctx context.Context) {
 			w.runAlert(ctx)
 		}
 	}
-}
-
-func (w *Watcher) Trigger(ctx context.Context, source string) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.timer != nil {
-		w.timer.Stop()
-	}
-	log.Printf("change signal received from %s; capture scheduled after %s", source, w.cfg.SettleInterval)
-	w.timer = time.AfterFunc(w.cfg.SettleInterval, func() {
-		w.runAlert(ctx)
-	})
 }
 
 func nextScheduledSend(now time.Time, hours []int) time.Time {
@@ -244,10 +187,4 @@ func (w *Watcher) cell(ctx context.Context, cell string) (string, error) {
 		return "", nil
 	}
 	return values[0][0], nil
-}
-
-func hashValues(values [][]string) string {
-	body, _ := json.Marshal(values)
-	sum := sha256.Sum256(body)
-	return hex.EncodeToString(sum[:])
 }
